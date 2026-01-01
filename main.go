@@ -36,6 +36,7 @@ type thumbnail struct {
 
 func main() {
 	godotenv.Load(".env")
+    // Quick video test
 
 	pathToDB := os.Getenv("DB_PATH")
 	if pathToDB == "" {

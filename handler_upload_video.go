@@ -71,10 +71,28 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		}
 	}()
 	defer tempFile.Close()
+
 	io.Copy(tempFile, f)
+	aspectRatio, err := getVideoAspectRatio(tempFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to get video aspect ratio ", err)
+        return
+	}
+	videoPrefix := func() string {
+		switch aspectRatio {
+		case "16:9":
+			return "landscape"
+		case "9:16":
+			return "portrait"
+		default:
+			return "other"
+		}
+	}()
+
+    log.Default().Printf("aspect ratio: %s, prefix: %s", aspectRatio,videoPrefix)
 	tempFile.Seek(0, io.SeekStart)
 
-	fileKey := fmt.Sprintf("%s.mp4", videoID.String())
+	fileKey := fmt.Sprintf("%s/%s.mp4",videoPrefix, videoID.String())
 	videoURL := cfg.getAwsURL(fileKey)
 
 	_, err = cfg.s3Client.PutObject(
